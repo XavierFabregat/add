@@ -1,13 +1,9 @@
 use super::{Backend, Resolved};
-use crate::flags::{Manager, NormalisedFlags};
+use crate::flags::NormalisedFlags;
 
 pub struct Pnpm;
 
 impl Backend for Pnpm {
-    fn manager(&self) -> Manager {
-        Manager::Pnpm
-    }
-
     fn install(&self, pkgs: &[String], flags: &NormalisedFlags) -> Resolved {
         let mut args = vec!["add".to_string()];
         if flags.global {

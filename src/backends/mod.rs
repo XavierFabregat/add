@@ -34,7 +34,6 @@ impl Resolved {
 }
 
 pub trait Backend {
-    fn manager(&self) -> Manager;
     fn install(&self, pkgs: &[String], flags: &NormalisedFlags) -> Resolved;
 }
 

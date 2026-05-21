@@ -1,13 +1,9 @@
 use super::{Backend, Resolved};
-use crate::flags::{Manager, NormalisedFlags};
+use crate::flags::NormalisedFlags;
 
 pub struct Poetry;
 
 impl Backend for Poetry {
-    fn manager(&self) -> Manager {
-        Manager::Poetry
-    }
-
     fn install(&self, pkgs: &[String], flags: &NormalisedFlags) -> Resolved {
         let mut args = vec!["add".to_string()];
         let mut warnings = Vec::new();

@@ -1,13 +1,9 @@
 use super::{Backend, Resolved};
-use crate::flags::{Manager, NormalisedFlags};
+use crate::flags::NormalisedFlags;
 
 pub struct Yarn;
 
 impl Backend for Yarn {
-    fn manager(&self) -> Manager {
-        Manager::Yarn
-    }
-
     fn install(&self, pkgs: &[String], flags: &NormalisedFlags) -> Resolved {
         let mut args = Vec::new();
         if flags.global {

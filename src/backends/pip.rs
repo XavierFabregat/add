@@ -1,13 +1,9 @@
 use super::{Backend, Resolved};
-use crate::flags::{Manager, NormalisedFlags};
+use crate::flags::NormalisedFlags;
 
 pub struct Pip;
 
 impl Backend for Pip {
-    fn manager(&self) -> Manager {
-        Manager::Pip
-    }
-
     fn install(&self, pkgs: &[String], flags: &NormalisedFlags) -> Resolved {
         let mut args = vec!["install".to_string()];
         let mut warnings = Vec::new();

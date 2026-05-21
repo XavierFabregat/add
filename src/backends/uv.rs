@@ -1,13 +1,9 @@
 use super::{Backend, Resolved};
-use crate::flags::{Manager, NormalisedFlags};
+use crate::flags::NormalisedFlags;
 
 pub struct Uv;
 
 impl Backend for Uv {
-    fn manager(&self) -> Manager {
-        Manager::Uv
-    }
-
     fn install(&self, pkgs: &[String], flags: &NormalisedFlags) -> Resolved {
         let mut warnings = Vec::new();
         let mut args = Vec::new();
