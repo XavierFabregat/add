@@ -1,4 +1,5 @@
 use crate::flags::Manager;
+use std::fs;
 use std::path::{Path, PathBuf};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -17,9 +18,18 @@ pub struct Detection {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DetectionSource {
+    PackageManagerField,
     Lockfile(&'static str),
     Marker(&'static str),
     None,
+}
+
+fn read_package_manager_field(package_json: &Path) -> Option<Manager> {
+    let text = fs::read_to_string(package_json).ok()?;
+    let v: serde_json::Value = serde_json::from_str(&text).ok()?;
+    let raw = v.get("packageManager")?.as_str()?;
+    let name = raw.split('@').next()?;
+    Manager::parse(name)
 }
 
 const JS_LOCKFILES: &[(&str, Manager)] = &[
@@ -37,11 +47,21 @@ const PY_LOCKFILES: &[(&str, Manager)] = &[
 ];
 
 const PY_MARKERS: &[&str] = &["pyproject.toml", "Pipfile", "requirements.txt", "setup.py"];
-const JS_MARKERS: &[&str] = &["package.json"];
 
 pub fn detect(start: &Path) -> Detection {
     let mut current = Some(start);
     while let Some(dir) = current {
+        let package_json = dir.join("package.json");
+        if package_json.is_file() {
+            if let Some(mgr) = read_package_manager_field(&package_json) {
+                return Detection {
+                    manager: Some(mgr),
+                    ecosystem: Some(Ecosystem::Javascript),
+                    root: dir.to_path_buf(),
+                    source: DetectionSource::PackageManagerField,
+                };
+            }
+        }
         for (name, mgr) in JS_LOCKFILES {
             if dir.join(name).is_file() {
                 return Detection {
@@ -62,15 +82,13 @@ pub fn detect(start: &Path) -> Detection {
                 };
             }
         }
-        for marker in JS_MARKERS {
-            if dir.join(marker).is_file() {
-                return Detection {
-                    manager: None,
-                    ecosystem: Some(Ecosystem::Javascript),
-                    root: dir.to_path_buf(),
-                    source: DetectionSource::Marker(marker),
-                };
-            }
+        if package_json.is_file() {
+            return Detection {
+                manager: None,
+                ecosystem: Some(Ecosystem::Javascript),
+                root: dir.to_path_buf(),
+                source: DetectionSource::Marker("package.json"),
+            };
         }
         for marker in PY_MARKERS {
             if dir.join(marker).is_file() {
@@ -155,6 +173,67 @@ mod tests {
         let d = detect(dir.path());
         assert_eq!(d.manager, None);
         assert_eq!(d.ecosystem, Some(Ecosystem::Python));
+    }
+
+    fn write(p: &Path, body: &str) {
+        if let Some(parent) = p.parent() {
+            fs::create_dir_all(parent).unwrap();
+        }
+        fs::write(p, body).unwrap();
+    }
+
+    #[test]
+    fn package_manager_field_wins_over_lockfile() {
+        let dir = tempdir().unwrap();
+        write(
+            &dir.path().join("package.json"),
+            r#"{ "name":"x", "packageManager":"pnpm@9.1.0" }"#,
+        );
+        touch(&dir.path().join("yarn.lock"));
+        let d = detect(dir.path());
+        assert_eq!(d.manager, Some(Manager::Pnpm));
+        assert_eq!(d.source, DetectionSource::PackageManagerField);
+    }
+
+    #[test]
+    fn package_manager_field_works_without_lockfile() {
+        let dir = tempdir().unwrap();
+        write(
+            &dir.path().join("package.json"),
+            r#"{ "packageManager": "bun@1.1.0" }"#,
+        );
+        let d = detect(dir.path());
+        assert_eq!(d.manager, Some(Manager::Bun));
+    }
+
+    #[test]
+    fn package_manager_field_with_sha_suffix() {
+        let dir = tempdir().unwrap();
+        write(
+            &dir.path().join("package.json"),
+            r#"{ "packageManager": "yarn@4.1.0+sha512.abc123" }"#,
+        );
+        let d = detect(dir.path());
+        assert_eq!(d.manager, Some(Manager::Yarn));
+    }
+
+    #[test]
+    fn package_json_without_field_falls_through_to_lockfile() {
+        let dir = tempdir().unwrap();
+        write(&dir.path().join("package.json"), r#"{ "name": "x" }"#);
+        touch(&dir.path().join("pnpm-lock.yaml"));
+        let d = detect(dir.path());
+        assert_eq!(d.manager, Some(Manager::Pnpm));
+        assert_eq!(d.source, DetectionSource::Lockfile("pnpm-lock.yaml"));
+    }
+
+    #[test]
+    fn malformed_package_json_falls_through() {
+        let dir = tempdir().unwrap();
+        write(&dir.path().join("package.json"), "not json at all");
+        touch(&dir.path().join("yarn.lock"));
+        let d = detect(dir.path());
+        assert_eq!(d.manager, Some(Manager::Yarn));
     }
 
     #[test]

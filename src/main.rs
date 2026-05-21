@@ -136,6 +136,9 @@ fn describe_source(detection: &Detection, project: Option<&ProjectConfig>, cli: 
         format!(".addrc.toml at {}", detection.root.display())
     } else {
         match &detection.source {
+            DetectionSource::PackageManagerField => {
+                format!("packageManager field in {}/package.json", detection.root.display())
+            }
             DetectionSource::Lockfile(name) => {
                 format!("{} at {}", name, detection.root.display())
             }

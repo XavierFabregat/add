@@ -123,6 +123,39 @@ fn pip_warns_on_dev_flag() {
 }
 
 #[test]
+fn package_manager_field_overrides_lockfile() {
+    let dir = tempdir().unwrap();
+    fs::write(
+        dir.path().join("package.json"),
+        r#"{ "name":"x", "packageManager":"pnpm@9.1.0" }"#,
+    )
+    .unwrap();
+    touch(&dir.path().join("yarn.lock"));
+    add()
+        .current_dir(dir.path())
+        .args(["--dry-run", "react"])
+        .assert()
+        .success()
+        .stderr(contains("→ pnpm add react"));
+}
+
+#[test]
+fn package_manager_field_without_lockfile() {
+    let dir = tempdir().unwrap();
+    fs::write(
+        dir.path().join("package.json"),
+        r#"{ "packageManager": "bun@1.1.0" }"#,
+    )
+    .unwrap();
+    add()
+        .current_dir(dir.path())
+        .args(["--dry-run", "hono"])
+        .assert()
+        .success()
+        .stderr(contains("→ bun add hono"));
+}
+
+#[test]
 fn pm_override_wins_over_detection() {
     let dir = tempdir().unwrap();
     touch(&dir.path().join("pnpm-lock.yaml"));
