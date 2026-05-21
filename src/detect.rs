@@ -23,6 +23,7 @@ pub enum DetectionSource {
 }
 
 const JS_LOCKFILES: &[(&str, Manager)] = &[
+    ("bun.lock", Manager::Bun),
     ("bun.lockb", Manager::Bun),
     ("pnpm-lock.yaml", Manager::Pnpm),
     ("yarn.lock", Manager::Yarn),
@@ -154,6 +155,16 @@ mod tests {
         let d = detect(dir.path());
         assert_eq!(d.manager, None);
         assert_eq!(d.ecosystem, Some(Ecosystem::Python));
+    }
+
+    #[test]
+    fn detects_bun_text_lockfile() {
+        let dir = tempdir().unwrap();
+        touch(&dir.path().join("bun.lock"));
+        touch(&dir.path().join("package.json"));
+        let d = detect(dir.path());
+        assert_eq!(d.manager, Some(Manager::Bun));
+        assert_eq!(d.source, DetectionSource::Lockfile("bun.lock"));
     }
 
     #[test]
