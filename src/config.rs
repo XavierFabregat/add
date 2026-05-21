@@ -35,8 +35,7 @@ pub fn load_global() -> Result<GlobalConfig> {
     }
     let text = fs::read_to_string(&path)
         .with_context(|| format!("reading global config at {}", path.display()))?;
-    toml::from_str(&text)
-        .with_context(|| format!("parsing global config at {}", path.display()))
+    toml::from_str(&text).with_context(|| format!("parsing global config at {}", path.display()))
 }
 
 pub fn find_project_config(start: &Path) -> Option<PathBuf> {
@@ -65,8 +64,7 @@ pub fn load_project(start: &Path) -> Result<Option<ProjectConfig>> {
 pub fn write_project_config(dir: &Path, cfg: &ProjectConfig) -> Result<PathBuf> {
     let path = dir.join(".addrc.toml");
     let text = toml::to_string_pretty(cfg).context("serialising .addrc.toml")?;
-    fs::write(&path, text)
-        .with_context(|| format!("writing {}", path.display()))?;
+    fs::write(&path, text).with_context(|| format!("writing {}", path.display()))?;
     Ok(path)
 }
 
@@ -78,7 +76,9 @@ mod tests {
     #[test]
     fn project_config_round_trips() {
         let dir = tempdir().unwrap();
-        let cfg = ProjectConfig { manager: Some(Manager::Pnpm) };
+        let cfg = ProjectConfig {
+            manager: Some(Manager::Pnpm),
+        };
         let path = write_project_config(dir.path(), &cfg).unwrap();
         assert!(path.is_file());
         let loaded = load_project(dir.path()).unwrap().unwrap();
@@ -90,7 +90,9 @@ mod tests {
         let dir = tempdir().unwrap();
         write_project_config(
             dir.path(),
-            &ProjectConfig { manager: Some(Manager::Bun) },
+            &ProjectConfig {
+                manager: Some(Manager::Bun),
+            },
         )
         .unwrap();
         let sub = dir.path().join("a/b");

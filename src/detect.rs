@@ -52,15 +52,15 @@ pub fn detect(start: &Path) -> Detection {
     let mut current = Some(start);
     while let Some(dir) = current {
         let package_json = dir.join("package.json");
-        if package_json.is_file() {
-            if let Some(mgr) = read_package_manager_field(&package_json) {
-                return Detection {
-                    manager: Some(mgr),
-                    ecosystem: Some(Ecosystem::Javascript),
-                    root: dir.to_path_buf(),
-                    source: DetectionSource::PackageManagerField,
-                };
-            }
+        if package_json.is_file()
+            && let Some(mgr) = read_package_manager_field(&package_json)
+        {
+            return Detection {
+                manager: Some(mgr),
+                ecosystem: Some(Ecosystem::Javascript),
+                root: dir.to_path_buf(),
+                source: DetectionSource::PackageManagerField,
+            };
         }
         for (name, mgr) in JS_LOCKFILES {
             if dir.join(name).is_file() {

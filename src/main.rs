@@ -25,20 +25,48 @@ struct Cli {
     #[command(subcommand)]
     command: Option<Command>,
 
-    #[arg(short = 'D', long = "dev", global = true, help = "Add as a dev dependency")]
+    #[arg(
+        short = 'D',
+        long = "dev",
+        global = true,
+        help = "Add as a dev dependency"
+    )]
     dev: bool,
     #[arg(short = 'g', long = "global", global = true, help = "Install globally")]
     global: bool,
-    #[arg(short = 'E', long = "exact", global = true, help = "Pin to exact version")]
+    #[arg(
+        short = 'E',
+        long = "exact",
+        global = true,
+        help = "Pin to exact version"
+    )]
     exact: bool,
-    #[arg(long = "pm", global = true, value_name = "MANAGER", help = "Force a specific package manager")]
+    #[arg(
+        long = "pm",
+        global = true,
+        value_name = "MANAGER",
+        help = "Force a specific package manager"
+    )]
     pm: Option<String>,
-    #[arg(long = "dry-run", global = true, help = "Print resolved command without running it")]
+    #[arg(
+        long = "dry-run",
+        global = true,
+        help = "Print resolved command without running it"
+    )]
     dry_run: bool,
-    #[arg(short = 'q', long = "quiet", global = true, help = "Suppress the printed command")]
+    #[arg(
+        short = 'q',
+        long = "quiet",
+        global = true,
+        help = "Suppress the printed command"
+    )]
     quiet: bool,
 
-    #[arg(value_name = "PACKAGE", trailing_var_arg = true, help = "Packages to add (when no subcommand is given)")]
+    #[arg(
+        value_name = "PACKAGE",
+        trailing_var_arg = true,
+        help = "Packages to add (when no subcommand is given)"
+    )]
     packages: Vec<String>,
 }
 
@@ -137,13 +165,20 @@ fn describe_source(detection: &Detection, project: Option<&ProjectConfig>, cli: 
     } else {
         match &detection.source {
             DetectionSource::PackageManagerField => {
-                format!("packageManager field in {}/package.json", detection.root.display())
+                format!(
+                    "packageManager field in {}/package.json",
+                    detection.root.display()
+                )
             }
             DetectionSource::Lockfile(name) => {
                 format!("{} at {}", name, detection.root.display())
             }
             DetectionSource::Marker(name) => {
-                format!("{} at {} (no lockfile; using configured default)", name, detection.root.display())
+                format!(
+                    "{} at {} (no lockfile; using configured default)",
+                    name,
+                    detection.root.display()
+                )
             }
             DetectionSource::None => "no project detected".into(),
         }
@@ -182,8 +217,7 @@ fn resolve_manager(
     project: Option<&ProjectConfig>,
 ) -> Result<Manager> {
     if let Some(name) = &cli.pm {
-        return Manager::parse(name)
-            .ok_or_else(|| anyhow!("unknown manager `{name}`"));
+        return Manager::parse(name).ok_or_else(|| anyhow!("unknown manager `{name}`"));
     }
     if let Some(m) = project.and_then(|p| p.manager) {
         return Ok(m);
@@ -222,4 +256,3 @@ fn missing_default(ecosystem: &str, key: &str) -> anyhow::Error {
          Set [defaults]\n{key} = \"...\" in {cfg}, or pass --pm <manager>."
     )
 }
-
